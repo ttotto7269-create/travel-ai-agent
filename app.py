@@ -12,39 +12,50 @@ client = genai.Client(api_key=api_key)
 # 날씨 Tool
 def get_weather(city: str) -> str:
     """도시 이름을 받아 현재 기온을 알려주는 함수입니다."""
-    # 한글 도시명을 영어 도시명으로 변환
-    translate_response = client.models.generate_content(
-        model="gemini-3.6-flash",
-        contents=f"""
-        다음 도시 이름을 영어 도시명으로만 바꿔줘.
-        설명은 하지 말고 영어 도시명만 출력해.
 
-        도시: {city}
-        """
+    # 1. 도시 이름으로 위도·경도 찾기
+    geo_url = "https://nominatim.openstreetmap.org/search"
+
+    geo_params = {
+        "q": city,
+        "format": "jsonv2",
+        "limit": 1
+    }
+
+    headers = {
+        "User-Agent": "travel-ai-agent/1.0"
+    }
+
+    geo_response = requests.get(
+        geo_url,
+        params=geo_params,
+        headers=headers,
+        timeout=10
     )
 
-    english_city = translate_response.text.strip()
-    geo_url = (
-        f"https://geocoding-api.open-meteo.com/v1/search"
-        f"?name={english_city}&count=1&language=ko&format=json"
-    )
-
-    geo_response = requests.get(geo_url)
     geo_data = geo_response.json()
 
-    if "results" not in geo_data:
+    if not geo_data:
         return f"{city}의 위치를 찾지 못했습니다."
 
-    latitude = geo_data["results"][0]["latitude"]
-    longitude = geo_data["results"][0]["longitude"]
+    latitude = geo_data[0]["lat"]
+    longitude = geo_data[0]["lon"]
 
-    weather_url = (
-        f"https://api.open-meteo.com/v1/forecast"
-        f"?latitude={latitude}&longitude={longitude}"
-        f"&current=temperature_2m"
+    # 2. 위도·경도로 현재 기온 찾기
+    weather_url = "https://api.open-meteo.com/v1/forecast"
+
+    weather_params = {
+        "latitude": latitude,
+        "longitude": longitude,
+        "current": "temperature_2m"
+    }
+
+    weather_response = requests.get(
+        weather_url,
+        params=weather_params,
+        timeout=10
     )
 
-    weather_response = requests.get(weather_url)
     weather_data = weather_response.json()
 
     temperature = weather_data["current"]["temperature_2m"]
