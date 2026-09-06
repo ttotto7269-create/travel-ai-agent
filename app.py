@@ -12,10 +12,21 @@ client = genai.Client(api_key=api_key)
 # 날씨 Tool
 def get_weather(city: str) -> str:
     """도시 이름을 받아 현재 기온을 알려주는 함수입니다."""
+    # 한글 도시명을 영어 도시명으로 변환
+    translate_response = client.models.generate_content(
+        model="gemini-3.6-flash",
+        contents=f"""
+        다음 도시 이름을 영어 도시명으로만 바꿔줘.
+        설명은 하지 말고 영어 도시명만 출력해.
 
+        도시: {city}
+        """
+    )
+
+    english_city = translate_response.text.strip()
     geo_url = (
         f"https://geocoding-api.open-meteo.com/v1/search"
-        f"?name={city}&count=1&language=ko&format=json"
+        f"?name={english_city}&count=1&language=ko&format=json"
     )
 
     geo_response = requests.get(geo_url)
