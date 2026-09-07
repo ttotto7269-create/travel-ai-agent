@@ -80,8 +80,7 @@ def make_travel_plan_with_weather(destination, days, style):
     날짜별로 오전, 점심, 오후, 저녁 순서로 작성하고,
     각 장소의 추천 이유도 간단히 알려줘.
     """
-    
-       for attempt in range(2):
+        for attempt in range(2):
         try:
             response = client.models.generate_content(
                 model="gemini-3.6-flash",
@@ -91,14 +90,14 @@ def make_travel_plan_with_weather(destination, days, style):
                 }
             )
             break
-    
+
         except Exception as e:
             if "503" in str(e) and attempt < 1:
                 time.sleep(5)
             else:
                 raise
-    
-        return response.text
+
+    return response.text
 
 
 # Gradio 화면
