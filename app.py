@@ -1,5 +1,4 @@
 import os
-import time
 import requests
 import gradio as gr
 from google import genai
@@ -97,28 +96,19 @@ def make_travel_plan_with_weather(destination, days, style):
 """
 
     # Gemini 서버가 혼잡하면 한 번 재시도
-    for attempt in range(2):
+try:
+    response = client.models.generate_content(
+        model="gemini-3.6-flash",
+        contents=prompt,
+        config={
+            "tools": [get_weather]
+        }
+    )
 
-        try:
-            response = client.models.generate_content(
-                model="gemini-3.6-flash",
-                contents=prompt,
-                config={
-                    "tools": [get_weather]
-                }
-            )
+    return response.text
 
-            return response.text
-
-        except Exception as e:
-
-            if "503" in str(e) and attempt == 0:
-                time.sleep(5)
-
-            else:
-                return f"AI 요청 중 오류가 발생했습니다.\n\n{e}"
-
-    return "AI가 응답하지 않았습니다. 잠시 후 다시 시도해주세요."
+except Exception as e:
+    return "현재 AI 서버가 혼잡합니다. 잠시 후 다시 시도해주세요."
 
 
 # =========================
